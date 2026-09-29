@@ -9,6 +9,7 @@ langchain-text-splitters
 langchain-groq
 faiss-cpu
 sentence-transformers
+langchain-huggingface
 pypdf
 pdf2image
 pytesseract

@@ -20,7 +20,7 @@ Balladesh-RAG/
 ├── data/            # Source PDF (Balladesh.pdf)
 ├── ocr_output/      # Cached OCR JSON (page_001.json, ...)
 ├── processed/       # Chunk JSON (chunks.json)
-├── vectorstore/     # FAISS index (later)
+├── vectorstore/     # FAISS index (vectorstore/balladesh/)
 └── tests/
 ```
 
@@ -29,7 +29,8 @@ Balladesh-RAG/
 - `GET /health` — ready
 - OCR for all 121 pages — ready (cached under `ocr_output/`)
 - Chunking — ready (`processed/chunks.json`)
-- Embeddings / FAISS / RAG / Streamlit — not yet
+- Multilingual embeddings + FAISS — ready
+- Groq RAG / Streamlit — not yet
 
 ## Ubuntu system dependencies (OCR)
 
@@ -72,6 +73,24 @@ python -m backend.app.ingestion
 ```
 
 Output: `processed/chunks.json` (each chunk has `chunk_id`, `page_number`, `text`).
+
+Build the FAISS index from those chunks (skips rebuild if the index already exists):
+
+```bash
+python -m backend.app.db --build
+```
+
+Force a full rebuild:
+
+```bash
+python -m backend.app.db --build --force
+```
+
+Retrieval-only test (no Groq / no LLM):
+
+```bash
+python -m backend.app.db --query "বাংলা ভাষার উৎপত্তি কী?" --k 5
+```
 
 API (optional):
 

@@ -35,7 +35,9 @@ CHUNKS_PATH: Path = PROCESSED_DIR / "chunks.json"
 # DocuMind-style splitter knobs (Balladesh defaults tuned for OCR pages)
 CHUNK_SIZE: int = int(os.environ.get("CHUNK_SIZE", "700"))
 CHUNK_OVERLAP: int = int(os.environ.get("CHUNK_OVERLAP", "120"))
-TOP_K: int = int(os.environ.get("TOP_K", "4"))
+TOP_K: int = int(os.environ.get("TOP_K", "5"))
+# DocuMind-style FAISS collection subdirectory under VECTORSTORE_DIR
+COLLECTION: str = os.environ.get("COLLECTION", "balladesh")
 
 # ben+eng covers mixed Bangla/English CamScanner pages; use "ben" for Bangla-only
 TESSERACT_LANG: str = os.environ.get("TESSERACT_LANG", "ben+eng")
