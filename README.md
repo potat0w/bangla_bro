@@ -5,7 +5,7 @@ RAG assistant for the scanned Bengali PDF **Balladesh**.
 ## Stack
 
 - **FastAPI** backend
-- **Streamlit** frontend
+- **Next.js** frontend (App Router + Tailwind)
 - **LangChain** + **FAISS**
 - **Groq** for chat
 - **Tesseract** OCR (`ben` / `ben+eng`) for Bengali scans
@@ -15,23 +15,21 @@ RAG assistant for the scanned Bengali PDF **Balladesh**.
 
 ```text
 Balladesh-RAG/
-├── backend/app/     # FastAPI app + OCR module
-├── frontend/        # Streamlit UI (later)
+├── backend/app/     # FastAPI + RAG
+├── frontend/        # Next.js site (/ + /chat)
 ├── data/            # Source PDF (Balladesh.pdf)
-├── ocr_output/      # Cached OCR JSON (page_001.json, ...)
-├── processed/       # Chunk JSON (chunks.json)
-├── vectorstore/     # FAISS index (vectorstore/balladesh/)
+├── ocr_output/      # Cached OCR JSON
+├── processed/       # Chunk JSON
+├── vectorstore/     # FAISS index
 └── tests/
 ```
 
 ## Status
 
 - `GET /health` — ready
-- OCR for all 121 pages — ready (cached under `ocr_output/`)
-- Chunking — ready (`processed/chunks.json`)
-- Multilingual embeddings + FAISS — ready
-- Groq RAG answering — ready (`POST /ask`)
-- Streamlit UI — not yet
+- OCR for all 121 pages — ready
+- Chunking / FAISS / Groq RAG — ready
+- Next.js landing + chat foundation — ready
 
 ## Ubuntu system dependencies (OCR)
 
@@ -110,3 +108,14 @@ uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 - Health: http://localhost:8000/health
 - Ask: `POST /ask` with `{"question": "..."}`
 - Swagger: http://localhost:8000/docs
+
+## Frontend (Next.js)
+
+```bash
+cd frontend
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+npm install
+npm run dev
+```
+
+Open http://localhost:3000 (landing) and http://localhost:3000/chat
