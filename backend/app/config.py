@@ -18,5 +18,6 @@ CHUNK_SIZE: int = 1000
 CHUNK_OVERLAP: int = 150
 TOP_K: int = 4
 
-TESSERACT_LANG: str = "ben"
+# ben+eng covers mixed Bangla/English CamScanner pages; use "ben" for Bangla-only
+TESSERACT_LANG: str = "ben+eng"
 OCR_DPI: int = 300
