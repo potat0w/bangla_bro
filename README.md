@@ -30,8 +30,8 @@ Balladesh-RAG/
 - OCR for all 121 pages — ready (cached under `ocr_output/`)
 - Chunking — ready (`processed/chunks.json`)
 - Multilingual embeddings + FAISS — ready
-- Groq RAG answering — ready (`python -m backend.app.rag`)
-- Streamlit / FastAPI `/ask` — not yet
+- Groq RAG answering — ready (`POST /ask`)
+- Streamlit UI — not yet
 
 ## Ubuntu system dependencies (OCR)
 
@@ -96,7 +96,9 @@ python -m backend.app.db --query "বাংলা ভাষার উৎপত�
 Ask a grounded RAG question (Groq + FAISS sources):
 
 ```bash
-python -m backend.app.rag --question "ভাষারীতির বৈচিত্র্য কী?"
+curl -s -X POST http://localhost:8000/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"ভাষারীতির বৈচিত্র্য কী?"}'
 ```
 
 API (optional):
@@ -105,4 +107,6 @@ API (optional):
 uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Health check: http://localhost:8000/health
+- Health: http://localhost:8000/health
+- Ask: `POST /ask` with `{"question": "..."}`
+- Swagger: http://localhost:8000/docs
