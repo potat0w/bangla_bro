@@ -20,6 +20,8 @@ build/
 data/*.pdf
 ocr_output/*
 !ocr_output/.gitkeep
+processed/*
+!processed/.gitkeep
 vectorstore/*
 !vectorstore/.gitkeep
 

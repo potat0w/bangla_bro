@@ -19,6 +19,7 @@ Balladesh-RAG/
 ├── frontend/        # Streamlit UI (later)
 ├── data/            # Source PDF (Balladesh.pdf)
 ├── ocr_output/      # Cached OCR JSON (page_001.json, ...)
+├── processed/       # Chunk JSON (chunks.json)
 ├── vectorstore/     # FAISS index (later)
 └── tests/
 ```
@@ -27,7 +28,7 @@ Balladesh-RAG/
 
 - `GET /health` — ready
 - OCR for all 121 pages — ready (cached under `ocr_output/`)
-- Chunking — ready (`vectorstore/chunks.json`)
+- Chunking — ready (`processed/chunks.json`)
 - Embeddings / FAISS / RAG / Streamlit — not yet
 
 ## Ubuntu system dependencies (OCR)
@@ -70,7 +71,7 @@ Chunk OCR pages into RAG-ready pieces (no embeddings yet):
 python -m backend.app.ingestion
 ```
 
-Output: `vectorstore/chunks.json` (each chunk has `page_number`, `chunk_id`, `text`).
+Output: `processed/chunks.json` (each chunk has `chunk_id`, `page_number`, `text`).
 
 API (optional):
 

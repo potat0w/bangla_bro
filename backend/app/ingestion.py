@@ -25,6 +25,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 _PAGE_FILE_RE = re.compile(r"^page_(\d+)\.json$")
+_BANGLA_RE = re.compile(r"[\u0980-\u09FF]")
+
+
+def clean_whitespace(text: str) -> str:
+    """Light cleanup only — collapse excess whitespace; keep Bangla intact."""
+    if not text:
+        return ""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = [re.sub(r"[ \t]+", " ", line.rstrip()) for line in text.split("\n")]
+    text = "\n".join(lines)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 def load_ocr_pages(ocr_dir: Path | None = None) -> list[dict]:
@@ -82,8 +94,8 @@ def _chunk_page_text(
         chunk_id = f"page_{page_number:03d}_chunk_{index:03d}"
         chunks.append(
             {
-                "page_number": page_number,
                 "chunk_id": chunk_id,
+                "page_number": page_number,
                 "text": chunk_text,
             }
         )
@@ -119,25 +131,18 @@ def build_chunks(
 
     for page in pages:
         page_number = page["page"]
-        text = page["text"]
-        if not text.strip():
+        text = clean_whitespace(page["text"])
+        if not text:
             skipped_empty.append(page_number)
             per_page_counts[page_number] = 0
-            logger.info(
-                "Skipping page %s — empty OCR text.",
-                page_number,
-            )
+            logger.info("Skipping page %s — empty OCR text.", page_number)
             continue
 
         page_chunks = _chunk_page_text(text, page_number, splitter)
         pages_processed += 1
         per_page_counts[page_number] = len(page_chunks)
         all_chunks.extend(page_chunks)
-        logger.info(
-            "Page %s → %s chunk(s)",
-            page_number,
-            len(page_chunks),
-        )
+        logger.info("Page %s → %s chunk(s)", page_number, len(page_chunks))
 
     stats = {
         "ocr_pages_found": len(pages),
@@ -155,7 +160,7 @@ def build_chunks(
 
 
 def save_chunks(result: dict, output_path: Path | None = None) -> Path:
-    """Persist chunks JSON under vectorstore/ (pre-FAISS staging)."""
+    """Persist chunks to processed/chunks.json (DocuMind has no equivalent stage)."""
     path = Path(output_path) if output_path else CHUNKS_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -180,21 +185,62 @@ def ingest_ocr_chunks(
     path = save_chunks(result, output_path=output_path)
     stats = dict(result["stats"])
     stats["chunks_path"] = str(path)
+    stats["_chunks"] = result["chunks"]  # for CLI verification only
     return stats
+
+
+def verify_chunks(chunks: list[dict]) -> None:
+    """Sanity-check page metadata and Bangla integrity."""
+    if not chunks:
+        raise ValueError("No chunks generated.")
+
+    first = chunks[0]
+    last = chunks[-1]
+    if not isinstance(first.get("page_number"), int) or first["page_number"] < 1:
+        raise ValueError(f"Invalid first chunk page_number: {first.get('page_number')}")
+    if not isinstance(last.get("page_number"), int) or last["page_number"] < 1:
+        raise ValueError(f"Invalid last chunk page_number: {last.get('page_number')}")
+
+    for chunk in chunks:
+        for key in ("chunk_id", "page_number", "text"):
+            if key not in chunk:
+                raise ValueError(f"Chunk missing key {key!r}: {chunk.get('chunk_id')}")
+        expected_prefix = f"page_{chunk['page_number']:03d}_chunk_"
+        if not str(chunk["chunk_id"]).startswith(expected_prefix):
+            raise ValueError(
+                f"chunk_id {chunk['chunk_id']!r} does not match page_number "
+                f"{chunk['page_number']}"
+            )
+
+    bangla_chunks = sum(1 for c in chunks if _BANGLA_RE.search(c["text"]))
+    if bangla_chunks == 0:
+        raise ValueError("No Bangla characters found in any chunk.")
+
+    logger.info(
+        "Verification OK — first page=%s, last page=%s, "
+        "single-page chunk_ids OK, Bangla intact (%s/%s chunks).",
+        first["page_number"],
+        last["page_number"],
+        bangla_chunks,
+        len(chunks),
+    )
 
 
 def _print_summary(stats: dict) -> None:
     logger.info("")
-    logger.info("=== Chunking summary ===")
-    logger.info("OCR pages found:      %s", stats["ocr_pages_found"])
-    logger.info("Pages processed:      %s", stats["pages_processed"])
+    logger.info("OCR pages found: %s", stats["ocr_pages_found"])
+    logger.info("Pages processed: %s", stats["pages_processed"])
     logger.info(
-        "Skipped/empty pages:  %s (%s)",
+        "Empty/skipped pages: %s%s",
         stats["skipped_empty_count"],
-        stats["skipped_empty_pages"] or "none",
+        (
+            f" ({', '.join(str(p) for p in stats['skipped_empty_pages'])})"
+            if stats["skipped_empty_pages"]
+            else ""
+        ),
     )
-    logger.info("Total chunks:         %s", stats["total_chunks"])
-    logger.info("Saved to:             %s", stats.get("chunks_path", CHUNKS_PATH))
+    logger.info("Total chunks generated: %s", stats["total_chunks"])
+    logger.info("Saved to: %s", stats.get("chunks_path", CHUNKS_PATH))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -234,6 +280,7 @@ def main(argv: list[str] | None = None) -> int:
             chunk_size=args.chunk_size,
             chunk_overlap=args.chunk_overlap,
         )
+        verify_chunks(stats.pop("_chunks"))
     except (FileNotFoundError, ValueError, OSError) as exc:
         logger.error("%s", exc)
         return 1

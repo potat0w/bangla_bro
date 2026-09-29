@@ -28,8 +28,9 @@ EMBEDDING_MODEL: str = os.environ.get(
 PDF_PATH: Path = PROJECT_ROOT / os.environ.get("PDF_PATH", "data/Balladesh.pdf")
 OCR_OUTPUT_DIR: Path = PROJECT_ROOT / os.environ.get("OCR_OUTPUT_DIR", "ocr_output")
 VECTORSTORE_DIR: Path = PROJECT_ROOT / os.environ.get("VECTORSTORE_DIR", "vectorstore")
-# Intermediate chunk dump (FAISS comes later; DocuMind writes straight to FAISS)
-CHUNKS_PATH: Path = VECTORSTORE_DIR / "chunks.json"
+# DocuMind has no intermediate chunk file (goes straight to FAISS). Persist here.
+PROCESSED_DIR: Path = PROJECT_ROOT / os.environ.get("PROCESSED_DIR", "processed")
+CHUNKS_PATH: Path = PROCESSED_DIR / "chunks.json"
 
 # DocuMind-style splitter knobs (Balladesh defaults tuned for OCR pages)
 CHUNK_SIZE: int = int(os.environ.get("CHUNK_SIZE", "700"))
