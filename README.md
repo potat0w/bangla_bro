@@ -26,8 +26,9 @@ Balladesh-RAG/
 ## Status
 
 - `GET /health` — ready
-- OCR for pages 1–5 — ready (cached under `ocr_output/`)
-- Chunking / embeddings / FAISS / RAG / Streamlit — not yet
+- OCR for all 121 pages — ready (cached under `ocr_output/`)
+- Chunking — ready (`vectorstore/chunks.json`)
+- Embeddings / FAISS / RAG / Streamlit — not yet
 
 ## Ubuntu system dependencies (OCR)
 
@@ -57,23 +58,19 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Place the book at `data/Balladesh.pdf`, then OCR the first 5 pages:
+Place the book at `data/Balladesh.pdf`, then OCR (skips cached pages):
 
 ```bash
-python -m backend.app.ocr --start 1 --end 5
+python -m backend.app.ocr --start 1 --end 121
 ```
 
-Re-running the same command skips pages that already have JSON (cache).
+Chunk OCR pages into RAG-ready pieces (no embeddings yet):
 
-Expected files:
-
-```text
-ocr_output/page_001.json
-ocr_output/page_002.json
-ocr_output/page_003.json
-ocr_output/page_004.json
-ocr_output/page_005.json
+```bash
+python -m backend.app.ingestion
 ```
+
+Output: `vectorstore/chunks.json` (each chunk has `page_number`, `chunk_id`, `text`).
 
 API (optional):
 
