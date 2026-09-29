@@ -7,6 +7,7 @@ overridden via environment variables — same idea as DocuMind's config.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 try:
@@ -19,7 +20,7 @@ except ImportError:
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
-LLM_MODEL: str = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL: str = os.environ.get("LLM_MODEL", "openai/gpt-oss-20b")
 EMBEDDING_MODEL: str = os.environ.get(
     "EMBEDDING_MODEL",
     "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
@@ -42,3 +43,31 @@ COLLECTION: str = os.environ.get("COLLECTION", "balladesh")
 # ben+eng covers mixed Bangla/English CamScanner pages; use "ben" for Bangla-only
 TESSERACT_LANG: str = os.environ.get("TESSERACT_LANG", "ben+eng")
 OCR_DPI: int = int(os.environ.get("OCR_DPI", "300"))
+
+
+@dataclass(frozen=True)
+class Settings:
+    """Lazy Groq settings — same idea as DocuMind's get_settings()."""
+
+    groq_api_key: str
+    llm_model: str
+
+
+_settings: Settings | None = None
+
+
+def get_settings() -> Settings:
+    """Read Groq credentials only when RAG asks (not at import time)."""
+    global _settings
+    if _settings is None:
+        key = os.environ.get("GROQ_API_KEY") or GROQ_API_KEY
+        if not key:
+            raise KeyError(
+                "GROQ_API_KEY is not set. Add it to .env (see .env.example)."
+            )
+        _settings = Settings(
+            groq_api_key=key,
+            llm_model=os.environ.get("LLM_MODEL", LLM_MODEL),
+        )
+    return _settings
+
